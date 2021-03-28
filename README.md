@@ -4,4 +4,4 @@
 
 # run `npm install` 
 
-# run `noder server.js` to start the the apis
+# run `noder server.js` to start the the apis this will run the apis in port 3200
