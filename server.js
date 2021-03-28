@@ -1,3 +1,10 @@
+/**
+ * This Node.js service exposes 2 endpoints
+ * 1. /api/save to save the selected images that are sorted
+ * 2. /api/get-images to retrieve the stored selection of images
+ *
+ * The data is stored in a remote Neo4j database using cypher queries
+ */
 const express = require("express");
 const bodyParser = require("body-parser");
 const router = express.Router();
@@ -5,17 +12,20 @@ const cors = require("cors");
 const app = express();
 
 app.use(cors());
-
 const neo4j = require("neo4j-driver");
-
 const port = 3200;
 
-//Here we are configuring express to use body-parser as middle-ware.
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-// add router in the Express app.
 app.use("/", router);
 
+/**
+ * API endpoint to store selected images that are sorted
+ * @param {array} array of sorted images
+ * @returns {String} Ok if success
+ * @returns {String} "Something went wrong!" if there was an generic error
+ * @returns {String} "Something broke!" if there was a server error
+ */
 router.post("/api/save", (request, response) => {
   console.log(request.body);
 
@@ -27,8 +37,11 @@ router.post("/api/save", (request, response) => {
     }
   );
 
-  // Delete existing selection before storing new one
+  /***
+   *  Neo4j Query --> Delete existing selection before storing new one
+   * */
   const deleteQuery = `match (p:Photo) detach delete p return p`;
+
   const session = driver.session({ database: "neo4j" });
   try {
     return session
@@ -41,6 +54,9 @@ router.post("/api/save", (request, response) => {
           const itemKey = `item_${key}`;
           params[itemKey] = item;
 
+          /***
+           *  Neo4j Query --> save existing selection one by one
+           * */
           const query = `MATCH (user:User{name:"TheOneAndOnlyUser"}) CREATE (photo:Photo) SET photo = $item_${key} MERGE (user)-[choice:HAS_CHOSEN_PHOTO]->(photo)  RETURN photo, user`;
 
           const session = driver.session({ database: "neo4j" });
@@ -71,10 +87,48 @@ router.post("/api/save", (request, response) => {
   }
 });
 
-app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/index.html");
-  // Note: __dirname is the current directory you're in. Try logging it and see what you get!
-  // Mine was '/Users/zellwk/Projects/demo-repos/crud-express-mongo' for this app.
+/**
+ * API endpoint to retrieve selected images that are sorted
+ * @returns {Array} array of selected images if success
+ * @returns {String} "Something went wrong!" if there was an generic error
+ * @returns {String} "Something broke!" if there was a server error
+ */
+app.get("/api/get-images", (request, response) => {
+  const driver = neo4j.driver(
+    "bolt://34.238.220.27:7687",
+    neo4j.auth.basic("neo4j", "vent-election-quiets"),
+    {
+      /* encrypted: 'ENCRYPTION_OFF' */
+    }
+  );
+
+  /***
+   *  Neo4j Query --> match existing selection and return the photos
+   * */
+  const retrieveQuery = `match (user:User)-[r:HAS_CHOSEN_PHOTO]->(photo:Photo) return photo ORDER BY photo.id`;
+  const session = driver.session({ database: "neo4j" });
+  try {
+    const session = driver.session({ database: "neo4j" });
+
+    const savedArray = [];
+    return session
+      .run(retrieveQuery)
+      .then((result) => {
+        result.records.forEach((record) => {
+          console.log("RECORD-COUNT", record.get("photo"));
+          console.log("------", record.get("photo").properties);
+          savedArray.push(record.get("photo").properties);
+        });
+        if (savedArray.length === 9) {
+          return response.send(savedArray);
+        }
+      })
+      .catch((error) => {
+        console.error("NEO4J RETRIEVE QUERY -ERROR", error);
+      });
+  } catch (error) {
+    response.status(400).send("Something went wrong!");
+  }
 });
 
 app.listen(port, () => {
