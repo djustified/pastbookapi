@@ -52,7 +52,7 @@ router.post("/api/save", (request, response) => {
         const savedArray = [];
         request.body.forEach((item, key) => {
           const itemKey = `item_${key}`;
-          params[itemKey] = item;
+          params[itemKey] = { ...item, key };
 
           /***
            *  Neo4j Query --> save existing selection one by one
@@ -105,7 +105,7 @@ app.get("/api/get-images", (request, response) => {
   /***
    *  Neo4j Query --> match existing selection and return the photos
    * */
-  const retrieveQuery = `match (user:User)-[r:HAS_CHOSEN_PHOTO]->(photo:Photo) return photo ORDER BY photo.id`;
+  const retrieveQuery = `match (user:User)-[r:HAS_CHOSEN_PHOTO]->(photo:Photo) return photo ORDER BY photo.key`;
   const session = driver.session({ database: "neo4j" });
   try {
     const session = driver.session({ database: "neo4j" });
