@@ -131,6 +131,43 @@ app.get("/api/get-images", (request, response) => {
   }
 });
 
+/**
+ * API endpoint to delete selected images for a fresh user
+ * @returns {String} "Ok. deleted all" if success
+ * @returns {String} "Something went wrong!" if there was an generic error
+ * @returns {String} "Something broke!" if there was a server error
+ */
+app.get("/api/delete-images", (request, response) => {
+  const driver = neo4j.driver(
+    "bolt://34.238.220.27:7687",
+    neo4j.auth.basic("neo4j", "vent-election-quiets"),
+    {
+      /* encrypted: 'ENCRYPTION_OFF' */
+    }
+  );
+
+  /***
+   *  Neo4j Query --> delete existing selection and return the photos
+   * */
+  const deleteQuery = `match (p:Photo) detach delete p return p `;
+  const session = driver.session({ database: "neo4j" });
+  try {
+    const session = driver.session({ database: "neo4j" });
+
+    const savedArray = [];
+    return session
+      .run(deleteQuery)
+      .then(() => {
+        return response.send("Ok. deleted all");
+      })
+      .catch((error) => {
+        console.error("NEO4J DELETE ALL QUERY -ERROR", error);
+      });
+  } catch (error) {
+    response.status(400).send("Something went wrong!");
+  }
+});
+
 app.listen(port, () => {
   console.log(`Example app listening at http://localhost:${port}`);
 });
