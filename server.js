@@ -6,6 +6,8 @@ const app = express();
 
 app.use(cors());
 
+const neo4j = require("neo4j-driver");
+
 const port = 3200;
 
 //Here we are configuring express to use body-parser as middle-ware.
@@ -15,10 +17,49 @@ app.use(bodyParser.json());
 app.use("/", router);
 
 router.post("/api/save", (request, response) => {
-  //code to perform particular action.
-  //To access POST variable use req.body()methods.
   console.log(request.body);
-  response.end("yes");
+
+  const driver = neo4j.driver(
+    "bolt://34.238.220.27:7687",
+    neo4j.auth.basic("neo4j", "vent-election-quiets"),
+    {
+      /* encrypted: 'ENCRYPTION_OFF' */
+    }
+  );
+
+  // Delete existing selection before storing new one
+  const deleteQuery = `match (p:Photo) detach delete p return p`;
+  const session = driver.session({ database: "neo4j" });
+  const result = [];
+  return session
+    .run(deleteQuery)
+    .then(() => {
+      /// Now store the new selection
+      params = {};
+      request.body.forEach((item, key) => {
+        const itemKey = `item_${key}`;
+        params[itemKey] = item;
+
+        const query = `MATCH (user:User{name:"TheOneAndOnlyUser"}) CREATE (photo:Photo) SET photo = $item_${key} MERGE (user)-[choice:HAS_CHOSEN_PHOTO]->(photo)  RETURN photo, user`;
+
+        const session = driver.session({ database: "neo4j" });
+
+        return session
+          .run(query, params)
+          .then((result) => {
+            result.records.forEach((record) => {
+              console.log("RECORD-COUNT", record.get("photo"));
+              result.push(record.get("photo"));
+            });
+          })
+          .catch((error) => {
+            console.error("NEO4J -ERROR", error);
+          });
+      });
+    })
+    .catch((error) => {
+      console.error("NEO4J -ERROR", error);
+    });
 });
 
 app.get("/", (req, res) => {
