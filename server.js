@@ -30,36 +30,45 @@ router.post("/api/save", (request, response) => {
   // Delete existing selection before storing new one
   const deleteQuery = `match (p:Photo) detach delete p return p`;
   const session = driver.session({ database: "neo4j" });
-  const result = [];
-  return session
-    .run(deleteQuery)
-    .then(() => {
-      /// Now store the new selection
-      params = {};
-      request.body.forEach((item, key) => {
-        const itemKey = `item_${key}`;
-        params[itemKey] = item;
+  try {
+    return session
+      .run(deleteQuery)
+      .then(() => {
+        /// Now store the new selection
+        params = {};
+        const savedArray = [];
+        request.body.forEach((item, key) => {
+          const itemKey = `item_${key}`;
+          params[itemKey] = item;
 
-        const query = `MATCH (user:User{name:"TheOneAndOnlyUser"}) CREATE (photo:Photo) SET photo = $item_${key} MERGE (user)-[choice:HAS_CHOSEN_PHOTO]->(photo)  RETURN photo, user`;
+          const query = `MATCH (user:User{name:"TheOneAndOnlyUser"}) CREATE (photo:Photo) SET photo = $item_${key} MERGE (user)-[choice:HAS_CHOSEN_PHOTO]->(photo)  RETURN photo, user`;
 
-        const session = driver.session({ database: "neo4j" });
+          const session = driver.session({ database: "neo4j" });
 
-        return session
-          .run(query, params)
-          .then((result) => {
-            result.records.forEach((record) => {
-              console.log("RECORD-COUNT", record.get("photo"));
-              result.push(record.get("photo"));
+          return session
+            .run(query, params)
+            .then((result) => {
+              result.records.forEach((record) => {
+                console.log("RECORD-COUNT", record.get("photo"));
+                console.log("------", record.get("photo").properties);
+                savedArray.push(record.get("photo").properties);
+              });
+              if (savedArray.length === request.body.length) {
+                return response.send("Ok");
+              }
+            })
+            .catch((error) => {
+              console.error("NEO4J CREATE QUERY -ERROR", error);
             });
-          })
-          .catch((error) => {
-            console.error("NEO4J -ERROR", error);
-          });
+        });
+      })
+      .catch((error) => {
+        console.error("NEO4J DELETE -ERROR", error);
+        response.status(500).send("Something broke!");
       });
-    })
-    .catch((error) => {
-      console.error("NEO4J -ERROR", error);
-    });
+  } catch (error) {
+    response.status(400).send("Something went wrong!");
+  }
 });
 
 app.get("/", (req, res) => {
