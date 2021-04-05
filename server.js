@@ -23,10 +23,10 @@
  *
  */
 
+const express = require("express");
 const app = express();
 const cors = require("cors");
 const router = express.Router();
-const express = require("express");
 const neo4j = require("neo4j-driver");
 const bodyParser = require("body-parser");
 
