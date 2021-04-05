@@ -6,7 +6,7 @@
  * 3. /api/delete-images to delete the existing selection order when a user starts from the homepage
  *
  * NOTE : Database The data is stored in a remote Neo4j database using cypher queries
- * This Sandbox database will expire in 10 days (5th of April 2021). if so please contact me (Mohamed Irshad)
+ * This Sandbox database will expire in 10 days (15th of April 2021). if so please contact me (Mohamed Irshad)
  * via email so I can spin up a new instance
  *
  */
@@ -45,9 +45,9 @@ const FETCH_IMAGELIST_API = "/api/fetch";
 const REMOTE_IMAGE_API =
   "https://dev-pb-apps.s3-eu-west-1.amazonaws.com/collection/CHhASmTpKjaHyAsSaauThRqMMjWanYkQ.json";
 const DELETE_API = "/api/delete-images";
-const DATABASE_HOST = "bolt://34.238.220.27:7687";
+const DATABASE_HOST = "bolt://3.231.145.240:7687";
 const DATABASE_USER = "neo4j";
-const DATABASE_PASSWORD = "vent-election-quiets";
+const DATABASE_PASSWORD = "muscles-watches-jugs";
 
 /**
  *
