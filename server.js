@@ -31,8 +31,9 @@ const neo4j = require("neo4j-driver");
 const bodyParser = require("body-parser");
 
 app.use(cors());
-app.use("/", router);
 app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use("/", router);
 
 /**
  * DEFINE APPLICATION CONSTANTS HERE
