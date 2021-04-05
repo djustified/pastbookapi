@@ -1,23 +1,25 @@
 /**
- * This Node.js service exposes 2 endpoints
+ *
+ * This Node.js service exposes 3 endpoints
  * 1. /api/save to save the selected images that are sorted
  * 2. /api/get-images to retrieve the stored selection of images
+ * 3. /api/delete-images to delete the existing selection order when a user starts from the homepage
  *
  * NOTE : Database The data is stored in a remote Neo4j database using cypher queries
  * This Sandbox database will expire in 10 days (5th of April 2021). if so please contact me (Mohamed Irshad)
  * via email so I can spin up a new instance
+ *
  */
-const express = require("express");
-const bodyParser = require("body-parser");
+const app = express();
 const cors = require("cors");
 const router = express.Router();
+const express = require("express");
 const neo4j = require("neo4j-driver");
-const app = express();
+const bodyParser = require("body-parser");
 
 app.use(cors());
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
 app.use("/", router);
+app.use(bodyParser.urlencoded({ extended: false }));
 
 /**
  * DEFINE APPLICATION CONSTANTS HERE
@@ -30,6 +32,15 @@ const DATABASE_HOST = "bolt://34.238.220.27:7687";
 const DATABASE_USER = "neo4j";
 const DATABASE_PASSWORD = "vent-election-quiets";
 
+/**
+ *
+ * Initialize the Neo4j Database driver
+ * @param {String} array Database host Url
+ * @params {String} databaseUser
+ * @params {String} databasePassword
+ * @returns {function} Database `session` object
+ *
+ */
 const initializeDatabaseDriver = () => {
   return neo4j.driver(
     DATABASE_HOST,
